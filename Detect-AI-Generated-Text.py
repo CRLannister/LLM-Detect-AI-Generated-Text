@@ -17,7 +17,7 @@ import os
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import xgboost as xgb
+# import xgboost as xgb
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.linear_model import LogisticRegression
@@ -30,12 +30,14 @@ from sklearn.preprocessing import StandardScaler
 
 import nltk
 import string
-nltk.download('wordnet')
-nltk.download('stopwords')
-get_ipython().system('unzip -n /usr/share/nltk_data/corpora/wordnet.zip -d /usr/share/nltk_data/corpora/')
+
+nltk.download('wordnet', download_dir='/tmp/nltk_data')
+nltk.download('stopwords', download_dir='/tmp/nltk_data')
+nltk.download('averaged_perceptron_tagger', download_dir='/tmp/nltk_data')
+get_ipython().system('unzip -n /tmp/nltk_data/corpora/wordnet.zip -d /tmp/nltk_data/corpora/')
 
 # Specify the location of the NLTK data
-nltk.data.path.append('/usr/share/nltk_data')
+nltk.data.path.append('/tmp/nltk_data')
 
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import wordnet, stopwords
@@ -52,7 +54,8 @@ from nltk.metrics import BigramAssocMeasures
 # In[3]:
 
 
-INPUT_DIR = '/kaggle/input/llm-detect-ai-generated-text'
+# INPUT_DIR = '/kaggle/input/llm-detect-ai-generated-text'
+INPUT_DIR = 'data'
 train_prompts_df = pd.read_csv(f'{INPUT_DIR}/train_prompts.csv')
 train_prompts_df.head()
 
@@ -91,7 +94,7 @@ train_essays_df.info()
 # In[8]:
 
 
-PaLM_df = pd.read_csv(f'{INPUT_DIR}/../llm-generated-essay-using-palm-from-google-gen-ai/LLM_generated_essay_PaLM.csv')
+PaLM_df = pd.read_csv(f'{INPUT_DIR}/LLM_generated_essay_PaLM.csv')
 PaLM_df.head()
 
 
@@ -363,7 +366,7 @@ def generate_features(text):
     return features_dict
 
 
-# In[13]:
+# In[16]:
 
 
 complete_df["features"] = complete_df['text'].apply(generate_features)
@@ -373,7 +376,7 @@ complete_df.head()
 
 # # Split Dataset into Train and Test
 
-# In[14]:
+# In[17]:
 
 
 additional_features = ['paragraph_count', 'word_count', 'sentence_count', 'spelling_errors', 
@@ -393,13 +396,13 @@ print(X_train_required_df.shape, y_train_required_df.shape)
 print(X_test_required_df.shape, y_test_required_df.shape)
 
 
-# In[15]:
+# In[18]:
 
 
 X_train_required_df.head()
 
 
-# In[16]:
+# In[19]:
 
 
 print(y_train_required_df.value_counts())
@@ -408,7 +411,7 @@ print(y_test_required_df.value_counts())
 
 # # Distibution and Plots between Features and Target
 
-# In[17]:
+# In[20]:
 
 
 # Calculate the length of each essay and create a new column
@@ -430,7 +433,7 @@ plt.legend()
 plt.show()
 
 
-# In[18]:
+# In[21]:
 
 
 sns.set(style="whitegrid")
@@ -451,7 +454,7 @@ plt.show()
 
 # # Correlation between engineered features and Target
 
-# In[19]:
+# In[22]:
 
 
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
@@ -478,7 +481,7 @@ sns.heatmap(corr, mask=mask, annot=True, cmap=royalblue, fmt='.2f', linewidths=0
 plt.show()
 
 
-# In[20]:
+# In[23]:
 
 
 sns.set_palette(['royalblue', 'darkturquoise'])
@@ -506,7 +509,7 @@ plt.tight_layout()
 plt.show()
 
 
-# In[21]:
+# In[24]:
 
 
 complete_df['collocations'].value_counts()
@@ -514,7 +517,7 @@ complete_df['collocations'].value_counts()
 
 # # Performing TF-IDF to populate training Dataframe
 
-# In[22]:
+# In[25]:
 
 
 vectorizer = TfidfVectorizer(stop_words='english', max_features=50000)
@@ -527,7 +530,7 @@ X_train = pd.concat([pd.DataFrame(X_train_text.toarray()), X_train_required_df[a
 X_train.shape
 
 
-# In[23]:
+# In[26]:
 
 
 X_train.head()
@@ -535,7 +538,7 @@ X_train.head()
 
 # # Scaling Training features and Using Logistic Regression
 
-# In[24]:
+# In[27]:
 
 
 lr_model = LogisticRegression(max_iter=1000)
@@ -549,14 +552,14 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 
 
-# In[25]:
+# In[28]:
 
 
 X_train_scaled_df = pd.DataFrame(X_train_scaled, columns=column_order)
 X_train_scaled_df.head()
 
 
-# In[26]:
+# In[29]:
 
 
 X_train_scaled_df.shape
@@ -564,7 +567,7 @@ X_train_scaled_df.shape
 
 # # Fitting the training data with validation
 
-# In[27]:
+# In[30]:
 
 
 for train_idx, val_idx in cv.split(X_train, y_train_required_df):
@@ -587,7 +590,7 @@ print('Standard deviation:', round((sum([(x - sum(auc_scores)/len(auc_scores))**
 
 # # Preprocessing Testing data
 
-# In[28]:
+# In[31]:
 
 
 X_test_text = vectorizer.transform(X_test_required_df['text'])
@@ -603,7 +606,7 @@ X_test_scaled = scaler.transform(X_test)
 X_test_scaled_df = pd.DataFrame(X_test_scaled, columns=column_order)
 
 
-# In[29]:
+# In[32]:
 
 
 X_test_scaled_df.shape
@@ -611,13 +614,13 @@ X_test_scaled_df.shape
 
 # # Predicting the testing Data from the fitted Model
 
-# In[30]:
+# In[33]:
 
 
 test_preds = lr_model.predict(X_test_scaled_df)
 
 
-# In[31]:
+# In[34]:
 
 
 # Predict probabilities for the positive class on the test data
@@ -631,7 +634,7 @@ print('ROC AUC on Test Set:', round(roc_auc, 4))
 
 # # Computing Metrics for Evaluation
 
-# In[32]:
+# In[35]:
 
 
 y_true = y_test_required_df
@@ -662,7 +665,7 @@ print("\nClassification Report:")
 print(classification_report(y_true, test_preds))
 
 
-# In[33]:
+# In[36]:
 
 
 # Compute ROC curve and AUC
@@ -683,7 +686,7 @@ plt.show()
 
 # ## Test and Submission
 
-# In[34]:
+# In[37]:
 
 
 # Preprocessing Test Data
@@ -692,14 +695,14 @@ test_essays_df = pd.concat([test_essays_df.drop(['features'], axis=1), test_essa
 test_essays_df.head()
 
 
-# In[35]:
+# In[38]:
 
 
 submission_df = test_essays_df[['id']]
 test_essays_df = test_essays_df[additional_features + ['text']]
 
 
-# In[36]:
+# In[39]:
 
 
 # Pipeline to change test data to feed into model
@@ -716,20 +719,20 @@ X_submission_scaled = scaler.transform(X_submission)
 X_submission_scaled_df = pd.DataFrame(X_submission_scaled, columns=column_order)
 
 
-# In[37]:
+# In[40]:
 
 
 test_probs = lr_model.predict_proba(X_submission_scaled_df)[:, 1]
 
 
-# In[38]:
+# In[41]:
 
 
 submission_df['generated'] = test_probs
 submission_df.head()
 
 
-# In[39]:
+# In[42]:
 
 
 submission_df.to_csv('submission.csv', index=False)
