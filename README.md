@@ -44,8 +44,8 @@ Make sure you have the following dependencies installed:
 
 1. **Clone the Repository:**
    ```bash
-   git clone "https://github.com/CRLannister/LLM---Detect-AI-Generated-Text.git"
-   cd "LLM---Detect-AI-Generated-Text"
+   git clone "https://github.com/CRLannister/LLM-Detect-AI-Generated-Text.git"
+   cd "LLM-Detect-AI-Generated-Text"
     ```
 2. **Install Dependencies:**
 
